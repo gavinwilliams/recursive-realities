@@ -94,6 +94,20 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify tag exists
+        run: |
+          echo "Checking for tag: ${{ needs.tag.outputs.tag_name }}"
+          git fetch --tags
+          if ! git rev-parse "${{ needs.tag.outputs.tag_name }}" >/dev/null 2>&1; then
+            echo "❌ Tag ${{ needs.tag.outputs.tag_name }} not found! Exiting."
+            exit 1
+          fi
+
+      - name: Wait for tag propagation
+        run: sleep 10
 
       - name: Create or update release
         uses: ncipollo/release-action@v1
@@ -113,6 +127,7 @@ jobs:
       - name: Upload eBooks to release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ needs.tag.outputs.tag_name }}
           files: build/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
