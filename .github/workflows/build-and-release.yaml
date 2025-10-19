@@ -1,4 +1,4 @@
-name: Build, Convert & Release eBooks
+name: Build & Release eBooks
 
 on:
   push:
@@ -19,48 +19,53 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Pandoc and LaTeX (XeLaTeX support)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y pandoc \
-            texlive-xetex \
-            texlive-fonts-recommended \
-            texlive-plain-generic \
-            texlive-latex-recommended \
-            texlive-latex-extra
-
       - name: Create build directory
         run: mkdir -p build
 
-      - name: Convert Markdown files
+      - name: Convert Markdown files using pandoc/latex Docker image
         run: |
-          for file in src/*.md; do
-            base=$(basename "$file" .md)
-            pandoc "$file" -o "build/${base}.pdf" --pdf-engine=xelatex
-            pandoc "$file" -o "build/${base}.epub"
-            pandoc "$file" -o "build/${base}.html" --standalone --metadata title="${base}"
-          done
+          docker run --rm \
+            -v "${{ github.workspace }}/src:/data" \
+            -v "${{ github.workspace }}/build:/data/build" \
+            pandoc/latex:latest-ubuntu \
+            /bin/sh -c "cd /data && for f in *.md; do \
+                           b=$(basename \"$f\" .md); \
+                           echo \"Converting $f...\"; \
+                           pandoc \"$f\" -o \"build/${b}.pdf\" --pdf-engine=xelatex && \
+                           pandoc \"$f\" -o \"build/${b}.epub\" && \
+                           pandoc \"$f\" -o \"build/${b}.html\" --standalone --metadata title=\"${b}\"; \
+                         done"
 
-      - name: Upload artifacts
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ebooks
           path: build/
 
   release:
-    name: Publish eBooks to Release
+    name: Create or Update GitHub Release
     needs: build
     runs-on: ubuntu-latest
-    if: github.event_name == 'release'
 
     steps:
-      - name: Download built artifacts
+      - uses: actions/checkout@v4
+
+      - name: Create or update release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ github.ref_name }}
+          name: "Automated Release ${{ github.ref_name }}"
+          body: "Auto-generated release of converted eBooks."
+          allowUpdates: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
           name: ebooks
           path: build/
 
-      - name: Upload to GitHub Release
+      - name: Upload eBooks to release
         uses: softprops/action-gh-release@v2
         with:
           files: build/*
