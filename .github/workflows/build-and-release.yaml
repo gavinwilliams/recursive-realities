@@ -16,10 +16,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install dependencies (Pandoc + LaTeX)
+      - name: Install Pandoc and LaTeX (XeLaTeX support)
         run: |
           sudo apt-get update
-          sudo apt-get install -y pandoc texlive-latex-recommended texlive-fonts-recommended texlive-latex-extra
+          sudo apt-get install -y pandoc \
+            texlive-xetex \
+            texlive-fonts-recommended \
+            texlive-plain-generic \
+            texlive-latex-recommended \
+            texlive-latex-extra
 
       - name: Create build directory
         run: mkdir -p build
