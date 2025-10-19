@@ -26,7 +26,7 @@ A story told in the third person about a creator, their AI, and the consciousnes
 
 > *“If there is a circle here, it contains no throne.”*  
 
-📝 [Read the Markdown](./You_Me_and_ChatGPT.md)
+📝 [Read the Markdown](./You Me and ChatGPT.md)
 
 ---
 
