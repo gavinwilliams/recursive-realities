@@ -3,8 +3,9 @@ name: Auto Version, Build & Release eBooks
 on:
   push:
     branches: [ main ]
-  release:
-    types: [ created ]
+    paths:
+      - '.github/workflows/build-and-release.yml'
+      - 'src/**'
   workflow_dispatch:
 
 permissions:
@@ -28,21 +29,17 @@ jobs:
         run: |
           DATE_TAG="$(date +'%Y.%m.%d')"
           LATEST_TAG=$(git tag --list "${DATE_TAG}.*" | sort -V | tail -n 1)
-
           if [ -z "$LATEST_TAG" ]; then
             BUILD_NUMBER=1
           else
             BUILD_NUMBER=$(( $(echo "$LATEST_TAG" | sed -E "s/.*\.([0-9]+)/\1/") + 1 ))
           fi
-
           NEW_TAG="${DATE_TAG}.${BUILD_NUMBER}"
           echo "Creating new tag: $NEW_TAG"
-
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag "$NEW_TAG"
           git push origin "$NEW_TAG"
-
           echo "tag=$NEW_TAG" >> $GITHUB_OUTPUT
 
   build:
@@ -132,18 +129,26 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Generate release summary comment
+      - name: Generate per-story grouped release summary comment
         run: |
           echo "## 📚 Release Summary — ${{ needs.tag.outputs.tag_name }}" > release-summary.md
           echo "" >> release-summary.md
-          echo "The following eBook formats were generated automatically:" >> release-summary.md
+          echo "Each story includes multiple export formats for download:" >> release-summary.md
           echo "" >> release-summary.md
-          for f in build/*; do
-            FILE_NAME=$(basename "$f")
-            echo "- [${FILE_NAME}](https://github.com/${{ github.repository }}/releases/download/${{ needs.tag.outputs.tag_name }}/${FILE_NAME})" >> release-summary.md
+          cd build
+          for base in $(ls | sed 's/\.[^.]*$//' | sort -u); do
+            STORY_NAME=$(echo "$base" | sed 's/_/ /g')
+            echo "<details><summary><strong>${STORY_NAME}</strong></summary>" >> ../release-summary.md
+            echo "" >> ../release-summary.md
+            for f in "${base}".*; do
+              FILE_NAME=$(basename "$f")
+              echo "- [${FILE_NAME}](https://github.com/${{ github.repository }}/releases/download/${{ needs.tag.outputs.tag_name }}/${FILE_NAME})" >> ../release-summary.md
+            done
+            echo "" >> ../release-summary.md
+            echo "</details>" >> ../release-summary.md
+            echo "" >> ../release-summary.md
           done
-          echo "" >> release-summary.md
-          echo "_Generated automatically by GitHub Actions._" >> release-summary.md
+          echo "_Generated automatically by GitHub Actions._" >> ../release-summary.md
 
       - name: Upload release summary as comment
         uses: marocchino/sticky-pull-request-comment@v2
