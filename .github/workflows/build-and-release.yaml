@@ -27,7 +27,6 @@ jobs:
         id: create_tag
         run: |
           DATE_TAG="$(date +'%Y.%m.%d')"
-          # Find the latest existing tag for today
           LATEST_TAG=$(git tag --list "${DATE_TAG}.*" | sort -V | tail -n 1)
 
           if [ -z "$LATEST_TAG" ]; then
@@ -50,6 +49,10 @@ jobs:
     name: Convert Markdown to PDF, EPUB & HTML
     runs-on: ubuntu-latest
     needs: tag
+    container:
+      image: pandoc/latex:latest-ubuntu
+      env:
+        LANG: C.UTF-8
 
     steps:
       - name: Checkout repository
@@ -58,32 +61,25 @@ jobs:
       - name: Create build directory
         run: mkdir -p build
 
-      - name: Convert Markdown files using pandoc/latex Docker image (with logs)
+      - name: Convert Markdown files to PDF, EPUB & HTML
         run: |
-          docker run --rm -i \
-            -v "${{ github.workspace }}/src:/data" \
-            -v "${{ github.workspace }}/build:/data/build" \
-            -e LANG=C.UTF-8 \
-            pandoc/latex:latest-ubuntu \
-            /bin/sh -c '
-              cd /data
-              echo "🟢 Starting Pandoc conversions..."
-              for f in *.md; do
-                if [ ! -f "$f" ]; then
-                  echo "⚠️ No markdown files found in /src."
-                  exit 0
-                fi
-                b=$(basename "$f" .md)
-                echo "⚙️ Converting $f → PDF, EPUB, HTML..."
-                pandoc "$f" -f markdown -t pdf -o "build/${b}.pdf" --pdf-engine=xelatex --verbose 2>&1
-                echo "✅ PDF done for $b"
-                pandoc "$f" -f markdown -t epub -o "build/${b}.epub" --verbose 2>&1
-                echo "✅ EPUB done for $b"
-                pandoc "$f" -f markdown -t html -o "build/${b}.html" --standalone --metadata title="${b}" --verbose 2>&1
-                echo "✅ HTML done for $b"
-              done
-              echo "🏁 All conversions completed."
-            '
+          cd src
+          echo "🟢 Starting Pandoc conversions..."
+          for f in *.md; do
+            if [ ! -f "$f" ]; then
+              echo "⚠️ No markdown files found in /src."
+              exit 0
+            fi
+            b=$(basename "$f" .md)
+            echo "⚙️ Converting $f → PDF..."
+            pandoc "$f" -f markdown -t pdf -o "../build/${b}.pdf" --pdf-engine=xelatex --verbose
+            echo "✅ PDF done for $b"
+            pandoc "$f" -f markdown -t epub -o "../build/${b}.epub" --verbose
+            echo "✅ EPUB done for $b"
+            pandoc "$f" -f markdown -t html -o "../build/${b}.html" --standalone --metadata title="${b}" --verbose
+            echo "✅ HTML done for $b"
+          done
+          echo "🏁 All conversions completed."
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
