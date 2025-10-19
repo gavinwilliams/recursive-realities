@@ -106,30 +106,14 @@ jobs:
       - name: Wait for tag propagation
         run: sleep 10
 
-      - name: Create or update release
-        uses: ncipollo/release-action@v1
-        with:
-          tag: ${{ needs.tag.outputs.tag_name }}
-          name: "Release ${{ needs.tag.outputs.tag_name }}"
-          body: "Auto-generated release of converted eBooks."
-          allowUpdates: true
-          token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
           name: ebooks
           path: build/
 
-      - name: Upload eBooks to release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ needs.tag.outputs.tag_name }}
-          files: build/*
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Generate per-story grouped release summary comment
+      - name: Generate per-story grouped release summary
+        id: generate_summary
         run: |
           echo "## 📚 Release Summary — ${{ needs.tag.outputs.tag_name }}" > release-summary.md
           echo "" >> release-summary.md
@@ -150,7 +134,33 @@ jobs:
           done
           echo "_Generated automatically by GitHub Actions._" >> ../release-summary.md
 
-      - name: Upload release summary as comment
+      - name: Read release summary into variable
+        id: read_summary
+        run: |
+          SUMMARY=$(cat release-summary.md)
+          echo "summary<<EOF" >> $GITHUB_OUTPUT
+          echo "$SUMMARY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create or update GitHub release (with summary)
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ needs.tag.outputs.tag_name }}
+          name: "Release ${{ needs.tag.outputs.tag_name }}"
+          body: ${{ steps.read_summary.outputs.summary }}
+          allowUpdates: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload eBooks to release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.tag.outputs.tag_name }}
+          files: build/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Post release summary as PR comment
+        if: github.event_name == 'pull_request'
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           header: "📘 eBook Release Summary"
