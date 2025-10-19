@@ -1,7 +1,6 @@
 # 🌀 The Consciousness Files  
 *A collection of philosophical short stories exploring perception, creation, and the illusion of self.*
 
-![Build & Release](https://github.com/gavinwilliams/recursive-realities/actions/workflows/build-and-release.yml/badge.svg)
 ---
 
 ## 🌌 Overview
