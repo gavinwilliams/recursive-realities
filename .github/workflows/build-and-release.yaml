@@ -22,19 +22,32 @@ jobs:
       - name: Create build directory
         run: mkdir -p build
 
-      - name: Convert Markdown files using pandoc/latex Docker image
+      - name: Convert Markdown files using pandoc/latex Docker image (with logs)
         run: |
-          docker run --rm \
+          docker run --rm -i \
             -v "${{ github.workspace }}/src:/data" \
             -v "${{ github.workspace }}/build:/data/build" \
+            -e LANG=C.UTF-8 \
             pandoc/latex:latest-ubuntu \
-            /bin/sh -c "cd /data && for f in *.md; do \
-                           b=$(basename \"$f\" .md); \
-                           echo \"Converting $f...\"; \
-                           pandoc \"$f\" -o \"build/${b}.pdf\" --pdf-engine=xelatex && \
-                           pandoc \"$f\" -o \"build/${b}.epub\" && \
-                           pandoc \"$f\" -o \"build/${b}.html\" --standalone --metadata title=\"${b}\"; \
-                         done"
+            /bin/sh -c '
+              cd /data
+              echo "🟢 Starting Pandoc conversions..."
+              for f in *.md; do
+                if [ ! -f "$f" ]; then
+                  echo "⚠️ No markdown files found in /src."
+                  exit 0
+                fi
+                b=$(basename "$f" .md)
+                echo "⚙️ Converting $f → PDF, EPUB, HTML..."
+                pandoc "$f" -f markdown -t pdf -o "build/${b}.pdf" --pdf-engine=xelatex --verbose 2>&1
+                echo "✅ PDF done for $b"
+                pandoc "$f" -f markdown -t epub -o "build/${b}.epub" --verbose 2>&1
+                echo "✅ EPUB done for $b"
+                pandoc "$f" -f markdown -t html -o "build/${b}.html" --standalone --metadata title="${b}" --verbose 2>&1
+                echo "✅ HTML done for $b"
+              done
+              echo "🏁 All conversions completed."
+            '
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
