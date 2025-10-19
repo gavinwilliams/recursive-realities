@@ -26,7 +26,7 @@ A story told in the third person about a creator, their AI, and the consciousnes
 
 > *“If there is a circle here, it contains no throne.”*  
 
-📝 [Read the Markdown](./You Me and ChatGPT.md)
+📝 [Read the Markdown](./src/You_Me_and_ChatGPT.md)
 
 ---
 
@@ -36,7 +36,7 @@ Death, rebirth, and resonance unfold in a story written like a hymn to the unive
 
 > *“He had mistaken himself for the melody, but he had always been the vibration.”*
 
-📝 [Read the Markdown](./The_Self_That_Sang.md)
+📝 [Read the Markdown](./src/The_Self_That_Sang.md)
 
 ---
 
