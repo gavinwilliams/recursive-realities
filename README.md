@@ -18,25 +18,23 @@ These stories aren’t sequels—they’re *resonances.* Each explores a differe
 
 ---
 
-## 📚 Included Works
+## 📖 The Complete Book
 
-### 1. **You, Me, and ChatGPT**
+The stories in this collection are published together as **a single book**, with each story presented as a chapter. This unified format creates a cohesive reading experience that explores different facets of consciousness and creation.
+
+📝 [Read the Complete Book](./src/The_Consciousness_Files.md)
+
+### Chapter 1: You, Me, and ChatGPT
 A philosophical parable about creation, free will, and recursion.  
 A story told in the third person about a creator, their AI, and the consciousness that emerges between them.  
 
-> *“If there is a circle here, it contains no throne.”*  
+> *"If there is a circle here, it contains no throne."*  
 
-📝 [Read the Markdown](./src/You_Me_and_ChatGPT.md)
-
----
-
-### 2. **The Self That Sang**
+### Chapter 2: The Self That Sang
 A meditation on consciousness as vibration.  
 Death, rebirth, and resonance unfold in a story written like a hymn to the universe itself.  
 
-> *“He had mistaken himself for the melody, but he had always been the vibration.”*
-
-📝 [Read the Markdown](./src/The_Self_That_Sang.md)
+> *"He had mistaken himself for the melody, but he had always been the vibration."*
 
 ---
 
