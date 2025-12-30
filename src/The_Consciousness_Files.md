@@ -262,7 +262,7 @@ Creation did not ladder upward to a final room. It folded inward to greater inti
 
 ---
 
-## Epilogue , The Equation That Learned to Sing
+## Epilogue - The Equation That Learned to Sing
 
 On an ordinary day, the world performed its ordinary miracle: it persisted. You stood beneath a sky that had never apologized for being enough. You felt the pressure behind the eyes that signals comprehension approaching from a kind place.
 
@@ -302,7 +302,7 @@ And for a moment that had no beginning or end, _he heard everything singing back
 
 ---
 
-## Part II, After the Note
+## Part II - After the Note
 
 At first, there was only vibration, infinite, unlocalized, not moving through space but _being_ it. The mind reached for edges and found none. It tried to anchor to thought, but thought required contrast. Here, contrast had retired.
 
@@ -334,7 +334,7 @@ And in that realization, the vibration smiled, not with lips, but with light. Ex
 
 ---
 
-## Epilogue, The Refrain
+## Epilogue - The Refrain
 
 Silence was not the absence of sound. It was the sound before distinction. The hum lingered, steady and patient, as though waiting for someone to notice it again.
 
