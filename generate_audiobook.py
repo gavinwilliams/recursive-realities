@@ -255,8 +255,8 @@ def generate_audiobook(input_file, output_file, api_key, voice_id=None, model_id
             for temp_file in temp_files:
                 try:
                     os.unlink(temp_file)
-                except Exception:
-                    pass
+                except OSError:
+                    pass  # Ignore file deletion errors
     else:
         # Text is short enough, generate in one go
         print(f"🎵 Generating audiobook with voice ID: {voice_id}")

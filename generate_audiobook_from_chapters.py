@@ -198,8 +198,8 @@ def generate_audio_for_chapter(client, text, voice_id, model_id, chapter_name):
             # Clean up temp file
             try:
                 os.unlink(temp_file.name)
-            except:
-                pass
+            except OSError:
+                pass  # Ignore file deletion errors
         
         # Combine chunks for this chapter
         print(f"   🔗 Combining {len(audio_segments)} chunks for this chapter...")
@@ -240,8 +240,8 @@ def generate_audio_for_chapter(client, text, voice_id, model_id, chapter_name):
         # Clean up temp file
         try:
             os.unlink(temp_file.name)
-        except:
-            pass
+        except OSError:
+            pass  # Ignore file deletion errors
         
         return audio_segment
 
