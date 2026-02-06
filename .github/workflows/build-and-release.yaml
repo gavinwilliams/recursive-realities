@@ -125,8 +125,27 @@ jobs:
           ELEVEN_LABS_API_KEY: ${{ secrets.ELEVEN_LABS_API_KEY }}
           ELEVEN_LABS_VOICE_ID: ${{ vars.ELEVEN_LABS_VOICE_ID }}
         run: |
-          echo "🎙️ Starting audiobook generation for The Consciousness Files..."
-          python generate_audiobook.py src/The_Consciousness_Files.md build/The_Consciousness_Files.mp3
+          echo "🎙️ Starting audiobook generation from individual story chapters..."
+          echo "📖 Each story file will be converted to audio and combined into one audiobook..."
+          
+          # Extract intro section from The_Consciousness_Files.md
+          python -c "
+          content = open('src/The_Consciousness_Files.md', 'r', encoding='utf-8').read()
+          chapter_1_start = content.find('# Chapter 1:')
+          intro = content[:chapter_1_start].strip() if chapter_1_start != -1 else ''
+          if intro:
+              with open('src/00_Intro.md', 'w', encoding='utf-8') as f:
+                  f.write(intro)
+              print('✅ Intro extracted')
+          "
+          
+          # Generate audiobook from intro + individual story files
+          python generate_audiobook_from_chapters.py \
+            build/The_Consciousness_Files.mp3 \
+            src/00_Intro.md \
+            src/You_Me_and_ChatGPT.md \
+            src/The_Self_That_Sang.md
+          
           echo "✅ Audiobook generation completed."
 
       - name: Upload audiobook artifact
