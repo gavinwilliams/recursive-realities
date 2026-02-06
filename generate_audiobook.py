@@ -181,9 +181,9 @@ def generate_audiobook(input_file, output_file, api_key, voice_id=None, model_id
         print("❌ Error: No text content found after markdown conversion")
         sys.exit(1)
     
-    # Initialize Eleven Labs client
+    # Initialize Eleven Labs client with extended timeout for large audio generation
     print("🔌 Connecting to Eleven Labs API...")
-    client = ElevenLabs(api_key=api_key)
+    client = ElevenLabs(api_key=api_key, timeout=300.0)
     
     # Eleven Labs has a 10,000 character limit for standard TTS
     MAX_CHUNK_SIZE = 9500  # Use 9500 to leave some buffer
