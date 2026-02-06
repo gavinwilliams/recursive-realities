@@ -135,28 +135,14 @@ jobs:
           echo "" >> ../release-summary.md
           echo "_Generated automatically by GitHub Actions._" >> ../release-summary.md
 
-      - name: Read release summary into variable
-        id: read_summary
-        run: |
-          SUMMARY=$(cat release-summary.md)
-          echo "summary<<EOF" >> $GITHUB_OUTPUT
-          echo "$SUMMARY" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-      - name: Create or update GitHub release (with summary)
-        uses: ncipollo/release-action@v1
-        with:
-          tag: ${{ needs.tag.outputs.tag_name }}
-          name: "Release ${{ needs.tag.outputs.tag_name }}"
-          body: ${{ steps.read_summary.outputs.summary }}
-          allowUpdates: true
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload eBooks to release
+      - name: Create GitHub release with assets
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.tag.outputs.tag_name }}
+          name: "Release ${{ needs.tag.outputs.tag_name }}"
+          body_path: release-summary.md
           files: build/*
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
