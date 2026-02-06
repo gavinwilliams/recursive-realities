@@ -24,6 +24,16 @@ The stories in this collection are published together as **a single book**, with
 
 📝 [Read the Complete Book](./src/The_Consciousness_Files.md)
 
+### Available Formats
+
+Every release includes the complete book in multiple formats:
+- **📕 PDF** - Perfect for reading on any device or printing
+- **📘 EPUB** - Optimized for e-readers like Kindle, Kobo, etc.
+- **🌐 HTML** - Read directly in your web browser
+- **🎙️ Audiobook (MP3)** - Listen to the narrated version generated with AI voice synthesis
+
+All formats are automatically generated and available in the [latest release](https://github.com/gavinwilliams/recursive-realities/releases/latest).
+
 ### Chapter 1: You, Me, and ChatGPT
 A philosophical parable about creation, free will, and recursion.  
 A story told in the third person about a creator, their AI, and the consciousness that emerges between them.  

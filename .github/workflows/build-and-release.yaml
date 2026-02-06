@@ -96,9 +96,46 @@ jobs:
           name: ebooks
           path: build/
 
+  audiobook:
+    name: Generate Audiobook with Eleven Labs
+    runs-on: ubuntu-latest
+    needs: tag
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Create build directory
+        run: mkdir -p build
+
+      - name: Generate Audiobook
+        env:
+          ELEVEN_LABS_API_KEY: ${{ secrets.ELEVEN_LABS_API_KEY }}
+          ELEVEN_LABS_VOICE_ID: ${{ secrets.ELEVEN_LABS_VOICE_ID }}
+        run: |
+          echo "🎙️ Starting audiobook generation for The Consciousness Files..."
+          python generate_audiobook.py src/The_Consciousness_Files.md build/The_Consciousness_Files.mp3
+          echo "✅ Audiobook generation completed."
+
+      - name: Upload audiobook artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: audiobook
+          path: build/*.mp3
+
   release:
     name: Create or Update GitHub Release
-    needs: [tag, build]
+    needs: [tag, build, audiobook]
     runs-on: ubuntu-latest
 
     steps:
@@ -124,6 +161,12 @@ jobs:
           name: ebooks
           path: build/
 
+      - name: Download audiobook artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: audiobook
+          path: build/
+
       - name: Generate release summary for single book
         id: generate_summary
         run: |
@@ -136,7 +179,24 @@ jobs:
           cd build
           for f in *; do
             FILE_NAME=$(basename "$f")
-            echo "- [${FILE_NAME}](https://github.com/${{ github.repository }}/releases/download/${{ needs.tag.outputs.tag_name }}/${FILE_NAME})" >> ../release-summary.md
+            FILE_EXT="${FILE_NAME##*.}"
+            case "$FILE_EXT" in
+              mp3)
+                echo "- 🎙️ [${FILE_NAME}](https://github.com/${{ github.repository }}/releases/download/${{ needs.tag.outputs.tag_name }}/${FILE_NAME}) (Audiobook)" >> ../release-summary.md
+                ;;
+              pdf)
+                echo "- 📕 [${FILE_NAME}](https://github.com/${{ github.repository }}/releases/download/${{ needs.tag.outputs.tag_name }}/${FILE_NAME}) (PDF)" >> ../release-summary.md
+                ;;
+              epub)
+                echo "- 📘 [${FILE_NAME}](https://github.com/${{ github.repository }}/releases/download/${{ needs.tag.outputs.tag_name }}/${FILE_NAME}) (EPUB)" >> ../release-summary.md
+                ;;
+              html)
+                echo "- 🌐 [${FILE_NAME}](https://github.com/${{ github.repository }}/releases/download/${{ needs.tag.outputs.tag_name }}/${FILE_NAME}) (HTML)" >> ../release-summary.md
+                ;;
+              *)
+                echo "- [${FILE_NAME}](https://github.com/${{ github.repository }}/releases/download/${{ needs.tag.outputs.tag_name }}/${FILE_NAME})" >> ../release-summary.md
+                ;;
+            esac
           done
           echo "" >> ../release-summary.md
           echo "_Generated automatically by GitHub Actions._" >> ../release-summary.md
