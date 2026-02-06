@@ -115,6 +115,7 @@ jobs:
       - name: Generate Audiobook
         env:
           ELEVEN_LABS_API_KEY: ${{ secrets.ELEVEN_LABS_API_KEY }}
+          ELEVEN_LABS_VOICE_ID: ${{ secrets.ELEVEN_LABS_VOICE_ID }}
         run: |
           echo "🎙️ Starting audiobook generation for The Consciousness Files..."
           python generate_audiobook.py src/The_Consciousness_Files.md build/The_Consciousness_Files.mp3

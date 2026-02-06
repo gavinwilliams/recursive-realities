@@ -57,7 +57,7 @@ def markdown_to_text(markdown_content):
     return text.strip()
 
 
-def generate_audiobook(input_file, output_file, api_key, voice_id="21m00Tcm4TlvDq8ikWAM"):
+def generate_audiobook(input_file, output_file, api_key, voice_id=None, model_id=None):
     """
     Generate audiobook from markdown file using Eleven Labs API.
     
@@ -65,8 +65,18 @@ def generate_audiobook(input_file, output_file, api_key, voice_id="21m00Tcm4TlvD
         input_file: Path to input markdown file
         output_file: Path to output audio file
         api_key: Eleven Labs API key
-        voice_id: Voice ID to use (default: Rachel - a calm, clear voice)
+        voice_id: Voice ID to use (default: Rachel - 21m00Tcm4TlvDq8ikWAM, a calm, clear voice)
+                  This is an Eleven Labs voice identifier. Available voices can be found at:
+                  https://elevenlabs.io/voices
+        model_id: Model ID to use (default: eleven_multilingual_v2)
+                  Available models: https://elevenlabs.io/docs/api-reference/text-to-speech
     """
+    # Set defaults
+    if voice_id is None:
+        voice_id = os.environ.get('ELEVEN_LABS_VOICE_ID', '21m00Tcm4TlvDq8ikWAM')
+    if model_id is None:
+        model_id = os.environ.get('ELEVEN_LABS_MODEL_ID', 'eleven_multilingual_v2')
+    
     print(f"🎙️  Reading markdown file: {input_file}")
     
     # Read the markdown file
@@ -97,7 +107,7 @@ def generate_audiobook(input_file, output_file, api_key, voice_id="21m00Tcm4TlvD
         audio_generator = client.text_to_speech.convert(
             voice_id=voice_id,
             text=text_content,
-            model_id="eleven_multilingual_v2",
+            model_id=model_id,
             voice_settings=VoiceSettings(
                 stability=0.5,
                 similarity_boost=0.75,
