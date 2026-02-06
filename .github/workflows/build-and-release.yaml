@@ -6,6 +6,9 @@ on:
     paths:
       - '.github/workflows/build-and-release.yaml'
       - 'src/**'
+      - 'generate_audiobook.py'
+      - 'generate_audiobook_from_chapters.py'
+      - 'requirements.txt'
   workflow_dispatch:
 
 permissions:
