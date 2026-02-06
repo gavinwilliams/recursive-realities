@@ -8,6 +8,8 @@ import re
 from pathlib import Path
 from elevenlabs.client import ElevenLabs
 from elevenlabs import VoiceSettings
+from pydub import AudioSegment
+import tempfile
 
 
 def markdown_to_text(markdown_content):
@@ -57,9 +59,91 @@ def markdown_to_text(markdown_content):
     return text.strip()
 
 
+def split_text_into_chunks(text, max_length=9500):
+    """
+    Split text into chunks that are under the max_length limit.
+    Tries to split on paragraph boundaries, then sentence boundaries.
+    
+    Args:
+        text: The text to split
+        max_length: Maximum length for each chunk (default 9500 to leave buffer)
+    
+    Returns:
+        List of text chunks
+    """
+    if len(text) <= max_length:
+        return [text]
+    
+    chunks = []
+    current_chunk = ""
+    
+    # Split into paragraphs first
+    paragraphs = text.split('\n\n')
+    
+    for paragraph in paragraphs:
+        # If a single paragraph is too long, split it by sentences
+        if len(paragraph) > max_length:
+            sentences = re.split(r'(?<=[.!?])\s+', paragraph)
+            for sentence in sentences:
+                # If even a single sentence is too long, force split it
+                if len(sentence) > max_length:
+                    # Split at max_length boundaries, trying to break on spaces
+                    while len(sentence) > max_length:
+                        split_point = sentence.rfind(' ', 0, max_length)
+                        if split_point == -1:
+                            split_point = max_length
+                        
+                        chunk_part = sentence[:split_point].strip()
+                        if current_chunk:
+                            if len(current_chunk) + len(chunk_part) + 1 <= max_length:
+                                current_chunk += " " + chunk_part
+                            else:
+                                chunks.append(current_chunk)
+                                current_chunk = chunk_part
+                        else:
+                            current_chunk = chunk_part
+                        
+                        sentence = sentence[split_point:].strip()
+                    
+                    # Add remaining part
+                    if sentence:
+                        if current_chunk and len(current_chunk) + len(sentence) + 1 <= max_length:
+                            current_chunk += " " + sentence
+                        elif current_chunk:
+                            chunks.append(current_chunk)
+                            current_chunk = sentence
+                        else:
+                            current_chunk = sentence
+                else:
+                    # Normal sentence
+                    if current_chunk and len(current_chunk) + len(sentence) + 1 <= max_length:
+                        current_chunk += " " + sentence
+                    elif current_chunk:
+                        chunks.append(current_chunk)
+                        current_chunk = sentence
+                    else:
+                        current_chunk = sentence
+        else:
+            # Paragraph fits, try to add it to current chunk
+            if current_chunk and len(current_chunk) + len(paragraph) + 2 <= max_length:
+                current_chunk += "\n\n" + paragraph
+            elif current_chunk:
+                chunks.append(current_chunk)
+                current_chunk = paragraph
+            else:
+                current_chunk = paragraph
+    
+    # Add the last chunk if it exists
+    if current_chunk:
+        chunks.append(current_chunk)
+    
+    return chunks
+
+
 def generate_audiobook(input_file, output_file, api_key, voice_id=None, model_id=None):
     """
     Generate audiobook from markdown file using Eleven Labs API.
+    If text exceeds the API limit, it will be split into chunks and combined.
     
     Args:
         input_file: Path to input markdown file
@@ -90,9 +174,10 @@ def generate_audiobook(input_file, output_file, api_key, voice_id=None, model_id
     text_content = markdown_to_text(markdown_content)
     
     # Check text length
-    print(f"📊 Text length: {len(text_content)} characters")
+    text_length = len(text_content)
+    print(f"📊 Text length: {text_length} characters")
     
-    if len(text_content) == 0:
+    if text_length == 0:
         print("❌ Error: No text content found after markdown conversion")
         sys.exit(1)
     
@@ -100,40 +185,113 @@ def generate_audiobook(input_file, output_file, api_key, voice_id=None, model_id
     print("🔌 Connecting to Eleven Labs API...")
     client = ElevenLabs(api_key=api_key)
     
-    # Generate audio
-    print(f"🎵 Generating audiobook with voice ID: {voice_id}")
-    print("⏳ This may take several minutes for longer texts...")
+    # Eleven Labs has a 10,000 character limit for standard TTS
+    MAX_CHUNK_SIZE = 9500  # Use 9500 to leave some buffer
     
-    try:
-        # Generate audio using the text-to-speech API
-        audio_generator = client.text_to_speech.convert(
-            voice_id=voice_id,
-            text=text_content,
-            model_id=model_id,
-            voice_settings=VoiceSettings(
-                stability=0.5,
-                similarity_boost=0.75,
-                style=0.0,
-                use_speaker_boost=True
+    # Check if we need to split the text
+    if text_length > MAX_CHUNK_SIZE:
+        print(f"⚠️  Text exceeds Eleven Labs limit of 10,000 characters")
+        print(f"📦 Splitting text into chunks...")
+        text_chunks = split_text_into_chunks(text_content, MAX_CHUNK_SIZE)
+        print(f"📦 Split into {len(text_chunks)} chunks")
+        
+        # Generate audio for each chunk
+        audio_segments = []
+        temp_files = []
+        
+        try:
+            for i, chunk in enumerate(text_chunks):
+                print(f"\n🎵 Generating audio for chunk {i+1}/{len(text_chunks)} ({len(chunk)} characters)...")
+                
+                audio_generator = client.text_to_speech.convert(
+                    voice_id=voice_id,
+                    text=chunk,
+                    model_id=model_id,
+                    voice_settings=VoiceSettings(
+                        stability=0.5,
+                        similarity_boost=0.75,
+                        style=0.0,
+                        use_speaker_boost=True
+                    )
+                )
+                
+                # Write chunk to temporary file
+                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.mp3')
+                temp_files.append(temp_file.name)
+                
+                with open(temp_file.name, 'wb') as f:
+                    for audio_chunk in audio_generator:
+                        f.write(audio_chunk)
+                
+                print(f"✅ Chunk {i+1} generated")
+                
+                # Load audio segment
+                audio_segment = AudioSegment.from_mp3(temp_file.name)
+                audio_segments.append(audio_segment)
+            
+            # Combine all audio segments
+            print(f"\n🔗 Combining {len(audio_segments)} audio chunks...")
+            combined_audio = audio_segments[0]
+            for segment in audio_segments[1:]:
+                combined_audio += segment
+            
+            # Export combined audio
+            print(f"💾 Writing combined audio to: {output_file}")
+            combined_audio.export(output_file, format='mp3')
+            
+            print(f"✅ Audiobook generated successfully: {output_file}")
+            
+            # Get file size
+            file_size = os.path.getsize(output_file)
+            file_size_mb = file_size / (1024 * 1024)
+            print(f"📦 File size: {file_size_mb:.2f} MB")
+            
+        except Exception as e:
+            print(f"❌ Error generating audiobook: {e}")
+            sys.exit(1)
+        finally:
+            # Clean up temporary files
+            print("🧹 Cleaning up temporary files...")
+            for temp_file in temp_files:
+                try:
+                    os.unlink(temp_file)
+                except Exception:
+                    pass
+    else:
+        # Text is short enough, generate in one go
+        print(f"🎵 Generating audiobook with voice ID: {voice_id}")
+        print("⏳ This may take several minutes for longer texts...")
+        
+        try:
+            # Generate audio using the text-to-speech API
+            audio_generator = client.text_to_speech.convert(
+                voice_id=voice_id,
+                text=text_content,
+                model_id=model_id,
+                voice_settings=VoiceSettings(
+                    stability=0.5,
+                    similarity_boost=0.75,
+                    style=0.0,
+                    use_speaker_boost=True
+                )
             )
-        )
-        
-        # Write audio to file
-        print(f"💾 Writing audio to: {output_file}")
-        with open(output_file, 'wb') as f:
-            for chunk in audio_generator:
-                f.write(chunk)
-        
-        print(f"✅ Audiobook generated successfully: {output_file}")
-        
-        # Get file size
-        file_size = os.path.getsize(output_file)
-        file_size_mb = file_size / (1024 * 1024)
-        print(f"📦 File size: {file_size_mb:.2f} MB")
-        
-    except Exception as e:
-        print(f"❌ Error generating audiobook: {e}")
-        sys.exit(1)
+            
+            # Write audio to file
+            print(f"💾 Writing audio to: {output_file}")
+            with open(output_file, 'wb') as f:
+                for chunk in audio_generator:
+                    f.write(chunk)
+            
+            print(f"✅ Audiobook generated successfully: {output_file}")
+            
+            # Get file size
+            file_size = os.path.getsize(output_file)
+            file_size_mb = file_size / (1024 * 1024)
+            print(f"📦 File size: {file_size_mb:.2f} MB")
+            
+        except Exception as e:
+            print(f"❌ Error generating audiobook: {e}")
+            sys.exit(1)
 
 
 def main():
