@@ -62,16 +62,22 @@ jobs:
         run: |
           cd src
           echo "🟢 Starting Pandoc conversions for The Consciousness Files..."
-          BOOK_FILE="The_Consciousness_Files.md"
           BOOK_NAME="The_Consciousness_Files"
           
-          if [ ! -f "$BOOK_FILE" ]; then
-            echo "⚠️ Book file not found: $BOOK_FILE"
-            exit 1
-          fi
+          # Combine all markdown files into one for PDF/EPUB generation
+          echo "📦 Combining markdown files..."
+          cat The_Consciousness_Files.md > ../build/temp_combined.md
+          echo "" >> ../build/temp_combined.md
+          echo "---" >> ../build/temp_combined.md
+          echo "" >> ../build/temp_combined.md
+          cat You_Me_and_ChatGPT.md >> ../build/temp_combined.md
+          echo "" >> ../build/temp_combined.md
+          echo "---" >> ../build/temp_combined.md
+          echo "" >> ../build/temp_combined.md
+          cat The_Self_That_Sang.md >> ../build/temp_combined.md
           
-          echo "⚙️ Converting $BOOK_FILE → PDF..."
-          pandoc "$BOOK_FILE" -f markdown -t pdf -o "../build/${BOOK_NAME}.pdf" \
+          echo "⚙️ Converting combined markdown → PDF..."
+          pandoc ../build/temp_combined.md -f markdown -t pdf -o "../build/${BOOK_NAME}.pdf" \
             --pdf-engine=xelatex \
             --top-level-division=chapter \
             --metadata title="The Consciousness Files" \
@@ -80,13 +86,16 @@ jobs:
             --verbose
           echo "✅ PDF done"
           
-          echo "⚙️ Converting $BOOK_FILE → EPUB..."
-          pandoc "$BOOK_FILE" -f markdown -t epub -o "../build/${BOOK_NAME}.epub" --verbose
+          echo "⚙️ Converting combined markdown → EPUB..."
+          pandoc ../build/temp_combined.md -f markdown -t epub -o "../build/${BOOK_NAME}.epub" --verbose
           echo "✅ EPUB done"
           
-          echo "⚙️ Converting $BOOK_FILE → HTML..."
-          pandoc "$BOOK_FILE" -f markdown -t html -o "../build/${BOOK_NAME}.html" --standalone --metadata title="${BOOK_NAME}" --verbose
+          echo "⚙️ Converting combined markdown → HTML..."
+          pandoc ../build/temp_combined.md -f markdown -t html -o "../build/${BOOK_NAME}.html" --standalone --metadata title="${BOOK_NAME}" --verbose
           echo "✅ HTML done"
+          
+          # Clean up temporary file
+          rm ../build/temp_combined.md
           
           echo "🏁 All conversions completed."
 
@@ -128,21 +137,10 @@ jobs:
           echo "🎙️ Starting audiobook generation from individual story chapters..."
           echo "📖 Each story file will be converted to audio and combined into one audiobook..."
           
-          # Extract intro section from The_Consciousness_Files.md
-          python -c "
-          content = open('src/The_Consciousness_Files.md', 'r', encoding='utf-8').read()
-          chapter_1_start = content.find('# Chapter 1:')
-          intro = content[:chapter_1_start].strip() if chapter_1_start != -1 else ''
-          if intro:
-              with open('src/00_Intro.md', 'w', encoding='utf-8') as f:
-                  f.write(intro)
-              print('✅ Intro extracted')
-          "
-          
           # Generate audiobook from intro + individual story files
           python generate_audiobook_from_chapters.py \
             build/The_Consciousness_Files.mp3 \
-            src/00_Intro.md \
+            src/The_Consciousness_Files.md \
             src/You_Me_and_ChatGPT.md \
             src/The_Self_That_Sang.md
           
