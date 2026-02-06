@@ -274,9 +274,9 @@ def generate_audiobook_from_chapters(chapter_files, output_file, api_key, voice_
             print(f"❌ Error: Chapter file not found: {chapter_file}")
             sys.exit(1)
     
-    # Initialize Eleven Labs client
+    # Initialize Eleven Labs client with extended timeout for large audio generation
     print("🔌 Connecting to Eleven Labs API...")
-    client = ElevenLabs(api_key=api_key)
+    client = ElevenLabs(api_key=api_key, timeout=300.0)
     
     audio_segments = []
     
