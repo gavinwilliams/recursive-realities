@@ -6,7 +6,8 @@ import os
 import sys
 import re
 from pathlib import Path
-from elevenlabs import ElevenLabs, VoiceSettings
+from elevenlabs.client import ElevenLabs
+from elevenlabs import VoiceSettings
 
 
 def markdown_to_text(markdown_content):
