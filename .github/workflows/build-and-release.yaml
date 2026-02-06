@@ -71,7 +71,13 @@ jobs:
           fi
           
           echo "⚙️ Converting $BOOK_FILE → PDF..."
-          pandoc "$BOOK_FILE" -f markdown -t pdf -o "../build/${BOOK_NAME}.pdf" --pdf-engine=xelatex --verbose
+          pandoc "$BOOK_FILE" -f markdown -t pdf -o "../build/${BOOK_NAME}.pdf" \
+            --pdf-engine=xelatex \
+            --top-level-division=chapter \
+            --metadata title="The Consciousness Files" \
+            --metadata subtitle="A collection of philosophical short stories exploring perception, creation, and the illusion of self" \
+            --metadata author="Gavin Williams & ChatGPT" \
+            --verbose
           echo "✅ PDF done"
           
           echo "⚙️ Converting $BOOK_FILE → EPUB..."
